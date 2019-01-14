@@ -29,6 +29,9 @@ fn init() {
     thread_local!(static LOCAL_INIT: Cell<bool> = Cell::new(false));
     GLOBAL_INIT.call_once(|| {
         global_root().mkdir_p();
+        // Appveyor runs without git user/email configured.
+        env::set_var("GIT_AUTHOR_NAME", "Index Admin");
+        env::set_var("GIT_AUTHOR_EMAIL", "admin@example.com");
     });
     LOCAL_INIT.with(|i| {
         if i.get() {

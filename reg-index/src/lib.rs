@@ -7,12 +7,14 @@ A very basic example:
 
 ```rust
 # fn main() -> Result<(), failure::Error> {
+# std::env::set_var("GIT_AUTHOR_NAME", "Index Admin");
+# std::env::set_var("GIT_AUTHOR_EMAIL", "admin@example.com");
 # let tmp_dir = tempfile::tempdir().unwrap();
 # let index_path = tmp_dir.path().join("index");
 # let index_url = "https://example.com/";
 # let project = tmp_dir.path().join("foo");
 # let status = std::process::Command::new("cargo")
-#     .args(&["new", project.to_str().unwrap()])
+#     .args(&["new", "--vcs=none", project.to_str().unwrap()])
 #     .status()?;
 # assert!(status.success());
 # let manifest_path = project.join("Cargo.toml");
@@ -186,9 +188,26 @@ pub fn init(path: impl AsRef<Path>, dl: &str, api: Option<&str>) -> Result<(), E
     index.write()?;
     let id = index.write_tree()?;
     let tree = repo.find_tree(id)?;
-    let sig = repo.signature()?;
+    let sig = signature(&repo)?;
     repo.commit(Some("HEAD"), &sig, &sig, "Initial commit", &tree, &[])?;
     Ok(())
+}
+
+fn signature(repo: &git2::Repository) -> Result<git2::Signature, Error> {
+    Ok(repo
+        .signature()
+        .or_else(|e| {
+            let name = env::var("GIT_AUTHOR_NAME").or_else(|_| env::var("GIT_COMMITTER_NAME"));
+            let email = env::var("GIT_AUTHOR_EMAIL").or_else(|_| env::var("GIT_COMMITTER_EMAIL"));
+            if name.is_err() || email.is_err() {
+                return Err(e);
+            }
+            git2::Signature::now(&name.unwrap(), &email.unwrap())
+        })
+        .with_context(|_| {
+            "Could not determine git username/email for signature. \
+             Be sure to set `user.name` and `user.email` in gitconfig."
+        })?)
 }
 
 /// Get the metadata for a package *before* publishing it.
@@ -575,7 +594,7 @@ fn git_add(repo: &git2::Repository, path: &Path, msg: &str) -> Result<(), Error>
     let tree = repo.find_tree(id)?;
     let head = repo.head()?;
     let parent = repo.find_commit(head.target().unwrap())?;
-    let sig = repo.signature()?;
+    let sig = signature(&repo)?;
     repo.commit(Some("HEAD"), &sig, &sig, msg, &tree, &[&parent])?;
     Ok(())
 }
