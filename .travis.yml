@@ -1,0 +1,14 @@
+language: rust
+
+matrix:
+  include:
+    - rust: stable
+    - rust: beta
+    - rust: nightly
+    - rust: stable
+      os: osx
+
+script:
+  - rustc -Vv
+  - cargo -Vv
+  - cargo test --all
