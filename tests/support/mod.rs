@@ -1,3 +1,4 @@
+#![macro_use]
 //! Utilities for tests.
 
 use std::{
@@ -13,6 +14,15 @@ use std::{
     },
 };
 use url::Url;
+
+macro_rules! t {
+    ($e:expr) => {
+        match $e {
+            Ok(e) => e,
+            Err(e) => panic!("{} failed with {}", stringify!($e), e),
+        }
+    };
+}
 
 mod config;
 mod package;
@@ -284,12 +294,10 @@ pub fn package(name: &str, version: &str) -> PackageBuilder {
 
 /// Check if one string matches another.
 pub fn matches(actual: &str, expected: &str) {
-    let expected = expected
-        .replace("<ROOT>", &root().display().to_string())
-        .replace(
-            "<CRATES.IO>",
-            "https://github.com/rust-lang/crates.io-index",
-        );
+    let expected = expected.replace(
+        "<CRATES.IO>",
+        "https://github.com/rust-lang/crates.io-index",
+    );
     let expected = regex::escape(&expected);
     let expected = expected.replace("<CKSUM>", "[a-f0-9]{64}");
     let expected = format!("^{}$", expected);

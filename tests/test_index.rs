@@ -188,11 +188,14 @@ fn test_add_alt_registry() {
     foo_pkg.index_add(&index);
     matches(
         &fs::read_to_string(index.index_path.join("3/f/foo")).unwrap(),
-        "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[\
-         {\"name\":\"bar\",\"req\":\"^0.1\",\"features\":[],\"optional\":false,\
-         \"default_features\":true,\"target\":null,\"kind\":\"normal\",\
-         \"registry\":\"file://<ROOT>/alt/index\",\"package\":null}],\
-         \"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n",
+        &format!(
+            "{{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[\
+             {{\"name\":\"bar\",\"req\":\"^0.1\",\"features\":[],\"optional\":false,\
+             \"default_features\":true,\"target\":null,\"kind\":\"normal\",\
+             \"registry\":\"{}\",\"package\":null}}],\
+             \"features\":{{}},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}}\n",
+            alt_index.index_url
+        ),
     );
     validate(&index, true);
 }
