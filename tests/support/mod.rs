@@ -9,7 +9,7 @@ use std::{
     process::Command,
     str,
     sync::{
-        atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT},
+        atomic::{AtomicUsize, Ordering},
         Once, ONCE_INIT,
     },
 };
@@ -31,7 +31,7 @@ mod paths;
 use self::package::{Package, PackageBuilder};
 pub use self::{config::CargoConfig, paths::PathExt};
 
-static NEXT_ID: AtomicUsize = ATOMIC_USIZE_INIT;
+static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 thread_local!(static TASK_ID: usize = NEXT_ID.fetch_add(1, Ordering::SeqCst));
 
 fn init() {
