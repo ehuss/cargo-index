@@ -67,7 +67,9 @@ pub fn set_yank(
                 new_line.push('\n');
                 Ok((new_line, 1))
             } else {
-                Ok((line.to_string(), 0))
+                let mut new_line = line.to_string();
+                new_line.push('\n');
+                Ok((new_line, 0))
             }
         })
         .collect::<Result<Vec<(String, u32)>, Error>>()?

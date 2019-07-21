@@ -324,22 +324,27 @@ fn test_target_cfg() {
 #[test]
 fn test_yank() {
     let index = init_index();
-    let foo_pkg = package("foo", "0.1.0").build();
-    foo_pkg.index_add(&index);
+    index.add_package("foo", "0.1.0");
+    index.add_package("foo", "0.1.1");
+    index.add_package("foo", "0.1.2");
     cargo_index("yank")
         .index(&index.index_path)
         .arg("-p=foo")
         .arg("--version=0.1.0")
         .run();
     matches(&fs::read_to_string(index.index_path.join("3/f/foo")).unwrap(),
-        "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":true,\"links\":null}\n");
+        "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":true,\"links\":null}\n\
+         {\"name\":\"foo\",\"vers\":\"0.1.1\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n\
+         {\"name\":\"foo\",\"vers\":\"0.1.2\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n");
     cargo_index("unyank")
         .index(&index.index_path)
         .arg("-p=foo")
         .arg("--version=0.1.0")
         .run();
     matches(&fs::read_to_string(index.index_path.join("3/f/foo")).unwrap(),
-        "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n");
+        "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n\
+         {\"name\":\"foo\",\"vers\":\"0.1.1\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n\
+         {\"name\":\"foo\",\"vers\":\"0.1.2\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n");
 }
 
 #[test]
