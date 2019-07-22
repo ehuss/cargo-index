@@ -10,7 +10,7 @@ use std::{
     str,
     sync::{
         atomic::{AtomicUsize, Ordering},
-        Once, ONCE_INIT,
+        Once,
     },
 };
 use url::Url;
@@ -35,7 +35,7 @@ static NEXT_ID: AtomicUsize = AtomicUsize::new(0);
 thread_local!(static TASK_ID: usize = NEXT_ID.fetch_add(1, Ordering::SeqCst));
 
 fn init() {
-    static GLOBAL_INIT: Once = ONCE_INIT;
+    static GLOBAL_INIT: Once = Once::new();
     thread_local!(static LOCAL_INIT: Cell<bool> = Cell::new(false));
     GLOBAL_INIT.call_once(|| {
         global_root().mkdir_p();
