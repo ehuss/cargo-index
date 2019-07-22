@@ -143,12 +143,12 @@ impl TestBuilder {
         let output = cmd
             .args(&self.args)
             .output()
-            .expect("Failed to launch cargo-init.");
+            .expect("Failed to launch cargo-index.");
         let stdout = String::from_utf8(output.stdout).unwrap();
         let stderr = String::from_utf8(output.stderr).unwrap();
         if output.status.code() != Some(self.status) {
             panic!(
-                "cargo-init exit status={} expected={}\n--- stderr\n{}\n--- stdout\n{}",
+                "cargo-index exit status={} expected={}\n--- stderr\n{}\n--- stdout\n{}",
                 output.status, self.status, stderr, stdout
             );
         }
