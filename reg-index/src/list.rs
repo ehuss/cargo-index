@@ -38,7 +38,7 @@ pub fn list_all(
     index: impl AsRef<Path>,
     pkg_name: Option<&str>,
     version_req: Option<&str>,
-    mut cb: impl FnMut(IndexPackage),
+    mut cb: impl FnMut(Vec<IndexPackage>),
 ) -> Result<(), Error> {
     let index = index.as_ref();
     let lock = Lock::new_shared(index)?;
@@ -48,19 +48,14 @@ pub fn list_all(
         None
     };
     if let Some(pkg_name) = pkg_name {
-        for pkg in _list(index, pkg_name, version_req.as_ref())? {
-            cb(pkg);
-        }
+        let entries = _list(index, pkg_name, version_req.as_ref())?;
+        cb(entries);
     } else {
         for entry in crate_walker(index) {
             let entry = entry?;
-            for pkg in _list(
-                index,
-                entry.file_name().to_str().unwrap(),
-                version_req.as_ref(),
-            )? {
-                cb(pkg);
-            }
+            let pkg_name = entry.file_name().to_str().unwrap();
+            let entries = _list(index, pkg_name, version_req.as_ref())?;
+            cb(entries);
         }
     };
     drop(lock);
