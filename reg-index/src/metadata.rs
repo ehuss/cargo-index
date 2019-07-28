@@ -3,6 +3,7 @@ use crate::{
     IndexDependency, IndexPackage,
 };
 use failure::{bail, format_err, Error, ResultExt};
+use same_file::is_same_file;
 use std::{
     env,
     path::{Path, PathBuf},
@@ -66,7 +67,11 @@ pub(crate) fn metadata_reg(
 ) -> Result<MetaInfo, Error> {
     let mut cmd = cargo_metadata::MetadataCommand::new();
     if let Some(path) = manifest_path {
-        cmd.manifest_path(path);
+        if let Some(parent) = path.parent() {
+            cmd.current_dir(parent);
+        } else {
+            cmd.manifest_path(path);
+        }
     }
     let metadata = cmd
         .exec()
@@ -93,7 +98,7 @@ pub(crate) fn metadata_reg(
     let pkg = metadata
         .packages
         .iter()
-        .find(|p| Path::new(&p.manifest_path) == actual_manifest_path)
+        .find(|p| is_same_file(&p.manifest_path, &actual_manifest_path).unwrap_or(false))
         .ok_or_else(|| {
             format_err!(
                 "Could not find package at `{}`.",
