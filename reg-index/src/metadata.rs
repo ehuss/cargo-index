@@ -68,7 +68,7 @@ pub(crate) fn metadata_reg(
     let mut cmd = cargo_metadata::MetadataCommand::new();
     if let Some(path) = manifest_path {
         if let Some(parent) = path.parent() {
-            cmd.current_dir(parent.to_path_buf());
+            cmd.current_dir(parent);
         } else {
             cmd.manifest_path(path);
         }
