@@ -117,7 +117,7 @@ pub struct IndexDependency {
     ///
     /// If not specified or null, it is assumed the dependency is in the
     /// current registry.
-    #[serde(default, with = "url_serde")]
+    #[serde(default)]
     pub registry: Option<Url>,
     /// If the dependency is renamed, this is a string of the actual package
     /// name. If None, this dependency is not renamed.
@@ -144,13 +144,12 @@ pub struct IndexConfig {
     /// This can have the markers `{crate}` and `{version}`. If the markers
     /// are not present, Cargo automatically appends
     /// `/{crate}/{version}/download` to the end.
-    #[serde(with = "url_serde")]
     pub dl: Url,
     /// URL that Cargo uses for the web API (publish/yank/search/etc.).
     ///
     /// This is optional. If not specified, Cargo will refuse to publish to
     /// this registry.
-    #[serde(default, with = "url_serde")]
+    #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api: Option<Url>,
     #[doc(hidden)]
