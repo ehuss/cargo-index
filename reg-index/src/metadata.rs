@@ -116,7 +116,7 @@ pub(crate) fn metadata_reg(
         }
         None => cargo_package(
             &actual_manifest_path,
-            &metadata.target_directory,
+            metadata.target_directory.as_ref(),
             pkg,
             package_args,
         )?,

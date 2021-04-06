@@ -68,7 +68,7 @@ pub(crate) fn cksum(path: &Path) -> Result<String, Error> {
     let mut file = fs::File::open(&path)
         .with_context(|_| format!("Could not open crate file `{}`.", path.display()))?;
     io::copy(&mut file, &mut hasher).unwrap();
-    Ok(hex::encode(hasher.result()))
+    Ok(hex::encode(hasher.finalize()))
 }
 
 pub(crate) fn extract_crate(crate_path: &Path) -> Result<(tempfile::TempDir, PathBuf), Error> {
