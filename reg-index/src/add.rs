@@ -110,7 +110,7 @@ pub(crate) fn add_reg(
         .with_context(|_| format!("Failed to create or open `{}`.", path.display()))?;
     f.write_all(meta_json.as_bytes())
         .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
-    let msg = format!("Updating crate '{}#{}'", index_pkg.name, index_pkg.vers);
+    let msg = format!("Updating crate `{}#{}`", index_pkg.name, index_pkg.vers);
     // Upload.
     if let Some(upload) = upload {
         let replaced = upload
