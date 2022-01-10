@@ -101,6 +101,17 @@ trait AppExt: Sized {
         )
     }
 
+    fn arg_force(self) -> Self {
+        self._arg(
+            Arg::with_name("force")
+                .long("force")
+                .alias("f")
+                .takes_value(false)
+                .required(false)
+                .help("Update the entry for the current package version, even if it already exists."),
+        )
+    }
+
     fn arg_package_args(self) -> Self {
         self._arg(Arg::with_name("package-args").multiple(true))
     }
@@ -134,6 +145,7 @@ fn run() -> Result<(), Error> {
                         .arg_crate()
                         .arg_index()
                         .arg_index_url()
+                        .arg_force()
                         .arg(
                             Arg::with_name("upload")
                             .long("upload")
@@ -252,6 +264,7 @@ fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
     let krate = args.value_of("crate").map(Path::new);
     let upload = args.value_of("upload");
     let manifest_path = args.value_of("manifest-path").map(Path::new);
+    let force = args.is_present("force");
     let package_args = package_args(args)?;
     let reg_pkg = match (manifest_path, krate) {
         (Some(_), None) | (None, None) => reg_index::add(
@@ -259,9 +272,10 @@ fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
             index_url,
             manifest_path,
             upload,
+            force,
             package_args.as_ref(),
         ),
-        (None, Some(krate)) => reg_index::add_from_crate(index_path, index_url, krate, upload),
+        (None, Some(krate)) => reg_index::add_from_crate(index_path, index_url, krate, upload, force),
         (Some(_), Some(_)) => bail!("Both --crate and --manifest-path cannot be specified."),
     }?;
     println!("{}:{} successfully added!", reg_pkg.name, reg_pkg.vers);

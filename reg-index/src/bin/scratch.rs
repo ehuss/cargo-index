@@ -24,6 +24,7 @@ fn main() -> Result<(), Error> {
         "https://example.com",
         Some(&manifest_path),
         None,
+        false,
         None,
     )?;
     // Get the metadata for the new entry.

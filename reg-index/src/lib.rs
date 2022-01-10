@@ -22,7 +22,7 @@ A very basic example:
 // Initialize a new index.
 reg_index::init(&index_path, "https://example.com", None)?;
 // Add a package to the index.
-reg_index::add(&index_path, index_url, Some(&manifest_path), None, None)?;
+reg_index::add(&index_path, index_url, Some(&manifest_path), None, false, None)?;
 // Packages can be yanked.
 reg_index::yank(&index_path, "foo", "0.1.0")?;
 // Get the metadata for the new entry.
