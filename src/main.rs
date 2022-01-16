@@ -267,15 +267,26 @@ fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
     let force = args.is_present("force");
     let package_args = package_args(args)?;
     let reg_pkg = match (manifest_path, krate) {
-        (Some(_), None) | (None, None) => reg_index::add(
-            index_path,
-            index_url,
-            manifest_path,
-            upload,
-            force,
-            package_args.as_ref(),
-        ),
-        (None, Some(krate)) => reg_index::add_from_crate(index_path, index_url, krate, upload, force),
+        (Some(_), None) | (None, None) => {
+            if force {
+                reg_index::force_add(
+                    index_path,
+                    index_url,
+                    manifest_path,
+                    upload,
+                    package_args.as_ref(),
+                )
+            } else {
+                reg_index::add(
+                    index_path,
+                    index_url,
+                    manifest_path,
+                    upload,
+                    package_args.as_ref(),
+                )
+            }
+        },
+        (None, Some(krate)) => reg_index::add_from_crate(index_path, index_url, krate, upload),
         (Some(_), Some(_)) => bail!("Both --crate and --manifest-path cannot be specified."),
     }?;
     println!("{}:{} successfully added!", reg_pkg.name, reg_pkg.vers);

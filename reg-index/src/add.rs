@@ -9,6 +9,7 @@ use failure::{bail, Error, ResultExt};
 use git2;
 use std::{fs, io::Write, path::Path};
 use std::fs::File;
+use semver::VersionReq;
 
 /// Add a new entry to the index.
 ///
@@ -41,7 +42,6 @@ pub fn add(
     index_url: &str,
     manifest_path: Option<&Path>,
     upload: Option<&str>,
-    force: bool,
     package_args: Option<&Vec<String>>,
 ) -> Result<IndexPackage, Error> {
     add_reg(
@@ -50,7 +50,31 @@ pub fn add(
         manifest_path,
         None,
         upload,
-        force,
+        package_args,
+    )
+}
+
+/// Add a new entry to the index, overwriting the existing entry if one already
+/// exists.
+///
+/// This will add an entry based on the contents of a `.crate` file. See
+/// [`add`] for a variant that takes a path to a `Cargo.toml` manifest, and
+/// for more details on how this works.
+///
+/// [`force_add`]: fn.force_add.html
+pub fn force_add(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    upload: Option<&str>,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    force_add_reg(
+        index_path,
+        index_url,
+        manifest_path,
+        None,
+        upload,
         package_args,
     )
 }
@@ -61,7 +85,43 @@ pub(crate) fn add_reg(
     manifest_path: Option<&Path>,
     crate_path: Option<&Path>,
     upload: Option<&str>,
-    force: bool,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    let meta_info = metadata_reg(index_url, manifest_path, crate_path, package_args)?;
+    let index_pkg = meta_info.index_pkg;
+    let index_path = index_path.as_ref();
+    let matching_pkgs = _list(
+        index_path,
+        &index_pkg.name,
+        Some(&VersionReq::exact(&index_pkg.vers)),
+    )?;
+    if !matching_pkgs.is_empty() {
+        bail!(
+            "Package `{}` version `{}` is already in the index.",
+            index_pkg.name,
+            index_pkg.vers
+        );
+    }
+    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+}
+
+pub(crate) fn force_add_reg(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    crate_path: Option<&Path>,
+    upload: Option<&str>,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+}
+
+fn update_crate_index(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    crate_path: Option<&Path>,
+    upload: Option<&str>,
     package_args: Option<&Vec<String>>,
 ) -> Result<IndexPackage, Error> {
     let MetaInfo {
@@ -79,13 +139,6 @@ pub(crate) fn add_reg(
         None,
     )?;
     let pkg_vers_exists = all_pkg_vers.iter().any(|pkg_vers| pkg_vers.vers == index_pkg.vers);
-    if !force && pkg_vers_exists {
-        bail!(
-            "Package `{}` version `{}` is already in the index.",
-            index_pkg.name,
-            index_pkg.vers
-        );
-    }
     for dep in &index_pkg.deps {
         if dep.registry.is_none() {
             let dep_name = dep.package.as_ref().unwrap_or(&dep.name);
@@ -173,7 +226,6 @@ pub fn add_from_crate(
     index_url: &str,
     crate_path: impl AsRef<Path>,
     upload: Option<&str>,
-    force: bool,
 ) -> Result<IndexPackage, Error> {
     let crate_path = crate_path.as_ref();
     let (_tmp_dir, pkg_path) = extract_crate(crate_path)?;
@@ -184,7 +236,6 @@ pub fn add_from_crate(
         Some(&manifest_path),
         Some(crate_path),
         upload,
-        force,
         None,
     )
 }
