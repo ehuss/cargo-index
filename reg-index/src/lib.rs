@@ -58,7 +58,7 @@ mod util;
 mod validate;
 mod yank;
 
-pub use add::{add, add_from_crate};
+pub use add::{add, add_from_crate, force_add};
 pub use init::init;
 pub use list::{list, list_all};
 pub use metadata::{metadata, metadata_from_crate};

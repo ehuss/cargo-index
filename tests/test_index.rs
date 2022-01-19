@@ -127,6 +127,28 @@ fn test_add_errors() {
 }
 
 #[test]
+fn test_add_force() {
+    // TODO: Finish this.
+    let index = init_index();
+    let foo_pkg = package("foo", "0.1.0").build();
+    foo_pkg.index_add(&index);
+    let expected_index = "{\"name\":\"foo\",\"vers\":\"0.1.0\",\"deps\":[],\"features\":{},\"cksum\":\"<CKSUM>\",\"yanked\":false,\"links\":null}\n";
+    matches(&fs::read_to_string(index.index_path.join("3/f/foo")).unwrap(),
+            expected_index);
+    cargo_index("add")
+        .manifest(foo_pkg.join("Cargo.toml"))
+        .index(&index.index_path)
+        .index_url("https://example.com")
+        .arg("--force")
+        .with_status(0)
+        .run();
+    validate(&index, true);
+    // Nothing should have changed when the same package is added.
+    matches(&fs::read_to_string(index.index_path.join("3/f/foo")).unwrap(),
+            expected_index);
+}
+
+#[test]
 fn test_add_renamed() {
     if !is_nightly() {
         // Remove once alt_registry is stable.

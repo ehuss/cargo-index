@@ -7,8 +7,9 @@ use crate::{
 };
 use failure::{bail, Error, ResultExt};
 use git2;
-use semver::VersionReq;
 use std::{fs, io::Write, path::Path};
+use std::fs::File;
+use semver::VersionReq;
 
 /// Add a new entry to the index.
 ///
@@ -53,6 +54,31 @@ pub fn add(
     )
 }
 
+/// Add a new entry to the index, overwriting the existing entry if one already
+/// exists.
+///
+/// This will add an entry based on the contents of a `.crate` file. See
+/// [`add`] for a variant that takes a path to a `Cargo.toml` manifest, and
+/// for more details on how this works.
+///
+/// [`force_add`]: fn.force_add.html
+pub fn force_add(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    upload: Option<&str>,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    force_add_reg(
+        index_path,
+        index_url,
+        manifest_path,
+        None,
+        upload,
+        package_args,
+    )
+}
+
 pub(crate) fn add_reg(
     index_path: impl AsRef<Path>,
     index_url: &str,
@@ -61,17 +87,9 @@ pub(crate) fn add_reg(
     upload: Option<&str>,
     package_args: Option<&Vec<String>>,
 ) -> Result<IndexPackage, Error> {
-    let MetaInfo {
-        index_pkg,
-        crate_path,
-    } = metadata_reg(index_url, manifest_path, crate_path, package_args)?;
-    let mut meta_json = serde_json::to_string(&index_pkg)?;
-    meta_json.push('\n');
-    // Add to git repo.
+    let meta_info = metadata_reg(index_url, manifest_path, crate_path, package_args)?;
+    let index_pkg = meta_info.index_pkg;
     let index_path = index_path.as_ref();
-    let repo = git2::Repository::open(index_path)
-        .with_context(|_| format!("Could not open index at `{}`.", index_path.display()))?;
-    let lock = Lock::new_exclusive(index_path)?;
     let matching_pkgs = _list(
         index_path,
         &index_pkg.name,
@@ -84,6 +102,43 @@ pub(crate) fn add_reg(
             index_pkg.vers
         );
     }
+    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+}
+
+pub(crate) fn force_add_reg(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    crate_path: Option<&Path>,
+    upload: Option<&str>,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+}
+
+fn update_crate_index(
+    index_path: impl AsRef<Path>,
+    index_url: &str,
+    manifest_path: Option<&Path>,
+    crate_path: Option<&Path>,
+    upload: Option<&str>,
+    package_args: Option<&Vec<String>>,
+) -> Result<IndexPackage, Error> {
+    let MetaInfo {
+        index_pkg,
+        crate_path,
+    } = metadata_reg(index_url, manifest_path, crate_path, package_args)?;
+    // Add to git repo.
+    let index_path = index_path.as_ref();
+    let repo = git2::Repository::open(index_path)
+        .with_context(|_| format!("Could not open index at `{}`.", index_path.display()))?;
+    let lock = Lock::new_exclusive(index_path)?;
+    let all_pkg_vers = _list(
+        index_path,
+        &index_pkg.name,
+        None,
+    )?;
+    let pkg_vers_exists = all_pkg_vers.iter().any(|pkg_vers| pkg_vers.vers == index_pkg.vers);
     for dep in &index_pkg.deps {
         if dep.registry.is_none() {
             let dep_name = dep.package.as_ref().unwrap_or(&dep.name);
@@ -105,11 +160,25 @@ pub(crate) fn add_reg(
         .with_context(|_| format!("Failed to create directory `{}`.", dir_path.display()))?;
     let mut f = fs::OpenOptions::new()
         .create(true)
-        .append(true)
+        .write(true)
+        .truncate(true)
         .open(&path)
         .with_context(|_| format!("Failed to create or open `{}`.", path.display()))?;
-    f.write_all(meta_json.as_bytes())
-        .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+
+    for pkg_vers in all_pkg_vers {
+        if pkg_vers.vers == index_pkg.vers {
+            // Replace the existing version of the package with the new one of the
+            // same version.
+            write_index_pkg(&mut f, &index_pkg)
+        } else {
+            write_index_pkg(&mut f, &pkg_vers)
+        }.with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+    }
+    if !pkg_vers_exists {
+        write_index_pkg(&mut f, &index_pkg)
+            .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+    }
+
     let msg = format!("Updating crate `{}#{}`", index_pkg.name, index_pkg.vers);
     // Upload.
     if let Some(upload) = upload {
@@ -123,6 +192,12 @@ pub(crate) fn add_reg(
     git_add(&repo, &repo_path, &msg).with_context(|_| "Failed to add to git repo.")?;
     drop(lock);
     Ok(index_pkg)
+}
+
+fn write_index_pkg(f: &mut File, index_pkg: &IndexPackage) -> std::io::Result<()> {
+    let mut meta_json = serde_json::to_string(&index_pkg)?;
+    meta_json.push('\n');
+    f.write_all(meta_json.as_bytes())
 }
 
 /// Add and commit a file to a git repo.
