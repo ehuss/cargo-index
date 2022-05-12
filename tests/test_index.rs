@@ -464,7 +464,7 @@ fn test_list_errors() {
         .arg("-p=foo")
         .arg("--version=foo")
         .with_status(1)
-        .with_stderr("Error: the given version requirement is invalid")
+        .with_stderr("Error: unexpected character 'f' while parsing major version number")
         .run();
 }
 
