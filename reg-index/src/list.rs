@@ -38,6 +38,7 @@ pub fn list_all(
     index: impl AsRef<Path>,
     pkg_name: Option<&str>,
     version_req: Option<&str>,
+    ignore_error: bool,
     mut cb: impl FnMut(Vec<IndexPackage>),
 ) -> Result<(), Error> {
     let index = index.as_ref();
@@ -54,8 +55,14 @@ pub fn list_all(
         for entry in crate_walker(index) {
             let entry = entry?;
             let pkg_name = entry.file_name().to_str().unwrap();
-            let entries = _list(index, pkg_name, version_req.as_ref())?;
-            cb(entries);
+            match _list(index, pkg_name, version_req.as_ref()) {
+              Ok(entries) =>  cb(entries),
+              Err(e) => if ignore_error {
+                eprintln!("{}", e)
+              } else {
+                return Err(e);
+              }
+            }
         }
     };
     drop(lock);

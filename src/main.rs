@@ -329,7 +329,7 @@ fn list(args: &ArgMatches<'_>) -> Result<(), Error> {
     let pkg = args.value_of("package");
     let version = args.value_of("version");
     let mut count = 0;
-    reg_index::list_all(args.value_of("index").unwrap(), pkg, version, |entries| {
+    reg_index::list_all(args.value_of("index").unwrap(), pkg, version, false, |entries| {
         for entry in entries {
             count += 1;
             println!("{}", serde_json::to_string(&entry).unwrap());
