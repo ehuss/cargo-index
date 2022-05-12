@@ -77,6 +77,9 @@ pub struct IndexPackage {
     pub deps: Vec<IndexDependency>,
     /// Cargo features defined in the package.
     pub features: BTreeMap<String, Vec<String>>,
+    /// Cargo features2 defined in the package.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub features2: Option<BTreeMap<String, Vec<String>>>,
     /// Checksum of the `.crate` file.
     pub cksum: String,
     /// Whether or not this package is yanked.
@@ -84,6 +87,9 @@ pub struct IndexPackage {
     /// Optional string that is the name of a native library the package is
     /// linking to.
     pub links: Option<String>,
+    /// Versioning of Index Package
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub v: Option<u8>,
     #[doc(hidden)]
     #[serde(skip)]
     __nonexhaustive: (),
