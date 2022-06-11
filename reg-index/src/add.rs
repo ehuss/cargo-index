@@ -9,7 +9,7 @@ use failure::{bail, Error, ResultExt};
 use git2;
 use std::{fs, io::Write, path::Path};
 use std::fs::File;
-use semver::VersionReq;
+use semver::{VersionReq, Comparator, Op};
 
 /// Add a new entry to the index.
 ///
@@ -93,7 +93,15 @@ pub(crate) fn add_reg(
     let matching_pkgs = _list(
         index_path,
         &index_pkg.name,
-        Some(&VersionReq::exact(&index_pkg.vers)),
+        Some(&VersionReq {
+          comparators: vec![Comparator {
+              op: Op::Exact,
+              major: index_pkg.vers.major,
+              minor: Some(index_pkg.vers.minor),
+              patch: Some(index_pkg.vers.patch),
+              pre: index_pkg.vers.pre.clone(),
+          }],
+      }),
     )?;
     if !matching_pkgs.is_empty() {
         bail!(
