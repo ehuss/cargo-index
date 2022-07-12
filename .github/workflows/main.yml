@@ -1,0 +1,44 @@
+name: CI
+on:
+  # Only run when merging to master, or open/synchronize/reopen a PR.
+  push:
+    branches:
+      - master
+  pull_request:
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            rust: stable
+          - os: ubuntu-latest
+            rust: beta
+          - os: ubuntu-latest
+            rust: nightly
+          - os: macos-latest
+            rust: stable
+          - os: windows-latest
+            rust: stable
+    steps:
+    - uses: actions/checkout@master
+    - name: Install Rust
+      run: rustup update --no-self-update ${{ matrix.rust }} && rustup default ${{ matrix.rust }}
+    - name: Build and run tests
+      run: cargo test
+
+  rustfmt:
+    name: Rustfmt
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: Install Rust
+      run: rustup update stable && rustup default stable && rustup component add rustfmt
+    - run: cargo fmt --check
