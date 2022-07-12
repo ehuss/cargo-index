@@ -108,7 +108,9 @@ trait AppExt: Sized {
                 .alias("f")
                 .takes_value(false)
                 .required(false)
-                .help("Update the entry for the current package version, even if it already exists."),
+                .help(
+                    "Update the entry for the current package version, even if it already exists.",
+                ),
         )
     }
 
@@ -285,7 +287,7 @@ fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
                     package_args.as_ref(),
                 )
             }
-        },
+        }
         (None, Some(krate)) => reg_index::add_from_crate(index_path, index_url, krate, upload),
         (Some(_), Some(_)) => bail!("Both --crate and --manifest-path cannot be specified."),
     }?;

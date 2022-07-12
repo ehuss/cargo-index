@@ -7,9 +7,9 @@ use crate::{
 };
 use failure::{bail, Error, ResultExt};
 use git2;
-use std::{fs, io::Write, path::Path};
+use semver::{Comparator, Op, VersionReq};
 use std::fs::File;
-use semver::{VersionReq, Comparator, Op};
+use std::{fs, io::Write, path::Path};
 
 /// Add a new entry to the index.
 ///
@@ -94,14 +94,14 @@ pub(crate) fn add_reg(
         index_path,
         &index_pkg.name,
         Some(&VersionReq {
-          comparators: vec![Comparator {
-              op: Op::Exact,
-              major: index_pkg.vers.major,
-              minor: Some(index_pkg.vers.minor),
-              patch: Some(index_pkg.vers.patch),
-              pre: index_pkg.vers.pre.clone(),
-          }],
-      }),
+            comparators: vec![Comparator {
+                op: Op::Exact,
+                major: index_pkg.vers.major,
+                minor: Some(index_pkg.vers.minor),
+                patch: Some(index_pkg.vers.patch),
+                pre: index_pkg.vers.pre.clone(),
+            }],
+        }),
     )?;
     if !matching_pkgs.is_empty() {
         bail!(
@@ -110,7 +110,14 @@ pub(crate) fn add_reg(
             index_pkg.vers
         );
     }
-    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+    update_crate_index(
+        index_path,
+        index_url,
+        manifest_path,
+        crate_path,
+        upload,
+        package_args,
+    )
 }
 
 pub(crate) fn force_add_reg(
@@ -121,7 +128,14 @@ pub(crate) fn force_add_reg(
     upload: Option<&str>,
     package_args: Option<&Vec<String>>,
 ) -> Result<IndexPackage, Error> {
-    update_crate_index(index_path, index_url, manifest_path, crate_path, upload, package_args)
+    update_crate_index(
+        index_path,
+        index_url,
+        manifest_path,
+        crate_path,
+        upload,
+        package_args,
+    )
 }
 
 fn update_crate_index(
@@ -141,12 +155,10 @@ fn update_crate_index(
     let repo = git2::Repository::open(index_path)
         .with_context(|_| format!("Could not open index at `{}`.", index_path.display()))?;
     let lock = Lock::new_exclusive(index_path)?;
-    let all_pkg_vers = _list(
-        index_path,
-        &index_pkg.name,
-        None,
-    )?;
-    let pkg_vers_exists = all_pkg_vers.iter().any(|pkg_vers| pkg_vers.vers == index_pkg.vers);
+    let all_pkg_vers = _list(index_path, &index_pkg.name, None)?;
+    let pkg_vers_exists = all_pkg_vers
+        .iter()
+        .any(|pkg_vers| pkg_vers.vers == index_pkg.vers);
     for dep in &index_pkg.deps {
         if dep.registry.is_none() {
             let dep_name = dep.package.as_ref().unwrap_or(&dep.name);
@@ -180,7 +192,8 @@ fn update_crate_index(
             write_index_pkg(&mut f, &index_pkg)
         } else {
             write_index_pkg(&mut f, &pkg_vers)
-        }.with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+        }
+        .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
     }
     if !pkg_vers_exists {
         write_index_pkg(&mut f, &index_pkg)
