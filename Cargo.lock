@@ -98,7 +98,7 @@ dependencies = [
  "failure",
  "reg-index",
  "regex",
- "semver 0.10.0",
+ "semver",
  "serde_json",
  "tempfile",
  "url",
@@ -121,7 +121,7 @@ checksum = "4acbb09d9ee8e23699b9634375c72795d095bf268439da88562cf9b501f181fa"
 dependencies = [
  "camino",
  "cargo-platform",
- "semver 1.0.9",
+ "semver",
  "serde",
  "serde_json",
 ]
@@ -534,7 +534,7 @@ dependencies = [
  "git2",
  "hex",
  "same-file",
- "semver 1.0.9",
+ "semver",
  "serde",
  "serde_derive",
  "serde_json",
@@ -594,27 +594,12 @@ dependencies = [
 
 [[package]]
 name = "semver"
-version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "394cec28fa623e00903caf7ba4fa6fb9a0e260280bb8cdbbba029611108a0190"
-dependencies = [
- "semver-parser",
-]
-
-[[package]]
-name = "semver"
 version = "1.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8cb243bdfdb5936c8dc3c45762a19d12ab4550cdc753bc247637d4ec35a040fd"
 dependencies = [
  "serde",
 ]
-
-[[package]]
-name = "semver-parser"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
 name = "serde"

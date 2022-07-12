@@ -329,7 +329,7 @@ fn cargo_version() -> semver::Version {
 }
 
 pub fn is_nightly() -> bool {
-    if cargo_version().pre.first().map(|i| i.to_string()) == Some("nightly".to_string()) {
+    if cargo_version().pre.as_str().contains("nightly") {
         true
     } else {
         eprintln!("Skipping test, requires nightly.");
