@@ -159,7 +159,6 @@ pub(crate) fn metadata_reg(
                 kind: dep.kind,
                 registry,
                 package,
-                __nonexhaustive: (),
             }
         })
         .collect();
@@ -173,7 +172,6 @@ pub(crate) fn metadata_reg(
         yanked: false,
         links: pkg.links.clone(),
         v: None,
-        __nonexhaustive: (),
     };
     let info = MetaInfo {
         index_pkg,

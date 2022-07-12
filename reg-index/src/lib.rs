@@ -68,6 +68,7 @@ pub use yank::{set_yank, unyank, yank};
 /// An entry for a single version of a package in the index.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[non_exhaustive]
 pub struct IndexPackage {
     /// The name of the package.
     pub name: String,
@@ -90,14 +91,12 @@ pub struct IndexPackage {
     /// Versioning of Index Package
     #[serde(skip_serializing_if = "Option::is_none")]
     pub v: Option<u8>,
-    #[doc(hidden)]
-    #[serde(skip)]
-    __nonexhaustive: (),
 }
 
 /// A dependency of a package.
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+#[non_exhaustive]
 pub struct IndexDependency {
     /// Name of the dependency.
     ///
@@ -128,9 +127,6 @@ pub struct IndexDependency {
     /// If the dependency is renamed, this is a string of the actual package
     /// name. If None, this dependency is not renamed.
     pub package: Option<String>,
-    #[doc(hidden)]
-    #[serde(skip)]
-    __nonexhaustive: (),
 }
 
 fn parse_dependency_kind<'de, D>(d: D) -> Result<cargo_metadata::DependencyKind, D::Error>
@@ -144,6 +140,7 @@ where
 ///
 /// This is stored in the root of the index repo as `config.json`.
 #[derive(Serialize, Deserialize)]
+#[non_exhaustive]
 pub struct IndexConfig {
     /// URL that Cargo uses to download crates.
     ///
@@ -158,9 +155,6 @@ pub struct IndexConfig {
     #[serde(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub api: Option<Url>,
-    #[doc(hidden)]
-    #[serde(skip)]
-    __nonexhaustive: (),
 }
 
 /// Return the configuration file in an index.
