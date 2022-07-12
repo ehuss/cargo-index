@@ -1,6 +1,6 @@
 mod support;
 use self::support::{
-    cargo_index, init_index, is_nightly, matches, package, validate, CargoConfig, IndexBuilder,
+    cargo_index, init_index, matches, package, validate, CargoConfig, IndexBuilder,
 };
 use reg_index::IndexPackage;
 use std::fs;
@@ -154,10 +154,6 @@ fn test_add_force() {
 
 #[test]
 fn test_add_renamed() {
-    if !is_nightly() {
-        // Remove once alt_registry is stable.
-        return;
-    }
     let index = init_index();
     CargoConfig::new().alt(&index).build();
 
@@ -166,7 +162,6 @@ fn test_add_renamed() {
         .file(
             "Cargo.toml",
             r#"
-            cargo-features = ["alternative-registries"]
             [package]
             name = "foo"
             version = "0.1.0"
@@ -189,10 +184,6 @@ fn test_add_renamed() {
 
 #[test]
 fn test_add_alt_registry() {
-    if !is_nightly() {
-        // Remove once alt_registry is stable.
-        return;
-    }
     let index = init_index();
     let alt_index = IndexBuilder::new().name("alt").build();
     CargoConfig::new().alt(&alt_index).build();
@@ -202,7 +193,6 @@ fn test_add_alt_registry() {
         .file(
             "Cargo.toml",
             r#"
-            cargo-features = ["alternative-registries"]
             [package]
             name = "foo"
             version = "0.1.0"
@@ -228,10 +218,6 @@ fn test_add_alt_registry() {
 
 #[test]
 fn test_add_crates_io() {
-    if !is_nightly() {
-        // Remove once alt_registry is stable.
-        return;
-    }
     let alt_index = IndexBuilder::new().name("alt").build();
     CargoConfig::new().alt(&alt_index).build();
     let foo_pkg = package("foo", "0.1.0")
@@ -262,7 +248,6 @@ fn test_add_crates_io() {
         .file(
             "Cargo.toml",
             r#"
-            cargo-features = ["alternative-registries"]
             [package]
             name = "bar"
             version = "0.1.0"
@@ -286,10 +271,6 @@ fn test_add_crates_io() {
 
 #[test]
 fn test_add_links() {
-    if !is_nightly() {
-        // Remove once 1.33 is stable.
-        return;
-    }
     let index = init_index();
     let foo_pkg = package("foo", "0.1.0")
         .file(
@@ -314,10 +295,6 @@ fn test_add_links() {
 
 #[test]
 fn test_target_cfg() {
-    if !is_nightly() {
-        // Remove once alt_registry is stable.
-        return;
-    }
     let index = init_index();
     CargoConfig::new().alt(&index).build();
 
@@ -326,7 +303,6 @@ fn test_target_cfg() {
         .file(
             "Cargo.toml",
             r#"
-            cargo-features = ["alternative-registries"]
             [package]
             name = "foo"
             version = "0.1.0"

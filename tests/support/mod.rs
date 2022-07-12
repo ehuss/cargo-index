@@ -316,23 +316,3 @@ pub fn validate(index: &TestIndex, crates: bool) {
     }
     proc.run();
 }
-
-fn cargo_version() -> semver::Version {
-    let output = std::process::Command::new("cargo")
-        .arg("-V")
-        .output()
-        .expect("Failed to exec cargo.");
-    let out = std::str::from_utf8(&output.stdout).expect("invalid utf8");
-    let split: Vec<&str> = out.split_whitespace().collect();
-    assert!(split.len() > 2, "cargo -V output is unexpected: {}", out);
-    semver::Version::parse(split[1]).expect("cargo -V semver could not be parsed")
-}
-
-pub fn is_nightly() -> bool {
-    if cargo_version().pre.as_str().contains("nightly") {
-        true
-    } else {
-        eprintln!("Skipping test, requires nightly.");
-        false
-    }
-}
