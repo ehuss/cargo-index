@@ -4,7 +4,7 @@ use crate::{
     util::{pkg_path, vers_eq},
     IndexPackage,
 };
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context, Error};
 use semver::Version;
 use std::{fs, path::Path};
 
@@ -34,7 +34,7 @@ pub fn set_yank(
     let version = Version::parse(version)?;
     let index = index.as_ref();
     let repo = git2::Repository::open(index)
-        .with_context(|_| format!("Could not open index at `{}`.", index.display()))?;
+        .with_context(|| format!("Could not open index at `{}`.", index.display()))?;
     let lock = Lock::new_exclusive(index)?;
     let repo_path = pkg_path(pkg_name);
     let path = index.join(&repo_path);
@@ -42,11 +42,11 @@ pub fn set_yank(
         bail!("Package `{}` is not in the index.", pkg_name);
     }
     let contents = fs::read_to_string(&path)
-        .with_context(|_| format!("Failed to read `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to read `{}`.", path.display()))?;
     let (lines, matches): (Vec<String>, Vec<u32>) = contents
         .lines()
         .map(|line| {
-            let mut pkg: IndexPackage = serde_json::from_str(line).with_context(|_| {
+            let mut pkg: IndexPackage = serde_json::from_str(line).with_context(|| {
                 format!(
                     "Failed to deserialize line in `{}`:\n{}",
                     path.display(),
@@ -88,7 +88,7 @@ pub fn set_yank(
         ),
     }
     fs::write(&path, lines.join(""))
-        .with_context(|_| format!("Failed to write `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to write `{}`.", path.display()))?;
     let what = if yank { "Yanking" } else { "Unyanking" };
     git_add(
         &repo,

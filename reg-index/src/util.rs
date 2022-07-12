@@ -1,4 +1,4 @@
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context, Error};
 use semver::Version;
 use sha2::Digest;
 use std::{
@@ -19,7 +19,7 @@ pub(crate) fn signature(repo: &git2::Repository) -> Result<git2::Signature, Erro
             }
             git2::Signature::now(&name.unwrap(), &email.unwrap())
         })
-        .with_context(|_| {
+        .with_context(|| {
             "Could not determine git username/email for signature. \
              Be sure to set `user.name` and `user.email` in gitconfig."
         })?)
@@ -40,7 +40,7 @@ pub(crate) fn cargo_package(
     if let Some(args) = package_args {
         cmd.args(args);
     }
-    let status = cmd.status().with_context(|_| {
+    let status = cmd.status().with_context(|| {
         format!(
             "Could not run `cargo package` for manifest {:?}.",
             manifest_path
@@ -65,23 +65,23 @@ pub(crate) fn cargo_package(
 pub(crate) fn cksum(path: &Path) -> Result<String, Error> {
     let mut hasher = sha2::Sha256::default();
     let mut file = fs::File::open(&path)
-        .with_context(|_| format!("Could not open crate file `{}`.", path.display()))?;
+        .with_context(|| format!("Could not open crate file `{}`.", path.display()))?;
     io::copy(&mut file, &mut hasher).unwrap();
     Ok(hex::encode(hasher.finalize()))
 }
 
 pub(crate) fn extract_crate(crate_path: &Path) -> Result<(tempfile::TempDir, PathBuf), Error> {
     let crate_file = fs::File::open(crate_path)
-        .with_context(|_| format!("Failed to open `{}`.", crate_path.display()))?;
+        .with_context(|| format!("Failed to open `{}`.", crate_path.display()))?;
     let tmp_dir = tempfile::tempdir().unwrap();
     let gz = flate2::read::GzDecoder::new(crate_file);
     let mut tar = tar::Archive::new(gz);
     let prefix = crate_path.file_stem().unwrap();
     for entry in tar.entries()? {
-        let mut entry = entry.with_context(|_| "Failed to iterate over archive.")?;
+        let mut entry = entry.with_context(|| "Failed to iterate over archive.")?;
         let entry_path = entry
             .path()
-            .with_context(|_| "Failed to read entry path.")?
+            .with_context(|| "Failed to read entry path.")?
             .into_owned();
         if !entry_path.starts_with(prefix) {
             bail!(
@@ -92,7 +92,7 @@ pub(crate) fn extract_crate(crate_path: &Path) -> Result<(tempfile::TempDir, Pat
         }
         entry
             .unpack_in(tmp_dir.path())
-            .with_context(|_| format!("Failed to unpack entry at `{}`.", entry_path.display()))?;
+            .with_context(|| format!("Failed to unpack entry at `{}`.", entry_path.display()))?;
     }
     let pkg_path = tmp_dir.path().join(prefix);
     Ok((tmp_dir, pkg_path))

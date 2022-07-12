@@ -7,7 +7,7 @@ This library is for accessing and manipulating a Cargo registry index.
 A very basic example:
 
 ```rust
-# fn main() -> Result<(), failure::Error> {
+# fn main() -> Result<(), anyhow::Error> {
 # std::env::set_var("GIT_AUTHOR_NAME", "Index Admin");
 # std::env::set_var("GIT_AUTHOR_EMAIL", "admin@example.com");
 # let tmp_dir = tempfile::tempdir().unwrap();
@@ -43,7 +43,7 @@ commands running at the same time do not interfere with one another. This
 requires that the filesystem supports locking.
 */
 
-use failure::{Error, ResultExt};
+use anyhow::{Context, Error};
 use semver::{Version, VersionReq};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, path::Path};
@@ -161,8 +161,8 @@ pub struct IndexConfig {
 pub fn load_config(index: impl AsRef<Path>) -> Result<IndexConfig, Error> {
     let path = index.as_ref().join("config.json");
     let f =
-        fs::File::open(&path).with_context(|_| format!("Failed to open `{}`.", path.display()))?;
+        fs::File::open(&path).with_context(|| format!("Failed to open `{}`.", path.display()))?;
     let index_cfg: IndexConfig = serde_json::from_reader(f)
-        .with_context(|_| format!("Failed to deserialize `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to deserialize `{}`.", path.display()))?;
     Ok(index_cfg)
 }

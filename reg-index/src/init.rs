@@ -1,5 +1,5 @@
 use crate::util::signature;
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context, Error};
 use std::{fs, path::Path};
 
 /// Initialize a new registry index.
@@ -16,7 +16,7 @@ pub fn init(path: impl AsRef<Path>, dl: &str, api: Option<&str>) -> Result<(), E
         );
     }
     let repo = git2::Repository::init(path)
-        .with_context(|_| format!("git failed to initialize `{}`", path.display()))?;
+        .with_context(|| format!("git failed to initialize `{}`", path.display()))?;
     let config_json = match api {
         Some(api) => format!(
             "{{\n  \"dl\": \"{}\",\n  \"api\": \"{}\"\n}}",
@@ -26,7 +26,7 @@ pub fn init(path: impl AsRef<Path>, dl: &str, api: Option<&str>) -> Result<(), E
         None => format!("{{\n  \"dl\": \"{}\"\n}}", dl),
     };
     let json_path = path.join("config.json");
-    fs::write(&json_path, config_json).with_context(|_| "Failed to write config.json")?;
+    fs::write(&json_path, config_json).with_context(|| "Failed to write config.json")?;
 
     let mut index = repo.index()?;
     index.add_path(Path::new("config.json"))?;

@@ -1,4 +1,4 @@
-use failure::Error;
+use anyhow::Error;
 use fs2::FileExt;
 use std::{
     fs::{File, OpenOptions},

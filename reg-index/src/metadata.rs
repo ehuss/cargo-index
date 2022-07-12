@@ -2,7 +2,7 @@ use crate::{
     util::{cargo_package, cksum, extract_crate},
     IndexDependency, IndexPackage,
 };
-use failure::{bail, format_err, Error, ResultExt};
+use anyhow::{bail, format_err, Context, Error};
 use same_file::is_same_file;
 use std::{
     env,
@@ -73,13 +73,13 @@ pub(crate) fn metadata_reg(
             cmd.manifest_path(path);
         }
     }
-    let metadata = cmd
-        .exec()
-        .map_err(|e| format_err!("{}", e))
-        .with_context(|_| match manifest_path {
-            Some(path) => format_err!("Failed to read manifest at `{}`.", path.display()),
-            None => format_err!("Failed to read manifest from current directory."),
-        })?;
+    let metadata =
+        cmd.exec()
+            .map_err(|e| format_err!("{}", e))
+            .with_context(|| match manifest_path {
+                Some(path) => format_err!("Failed to read manifest at `{}`.", path.display()),
+                None => format_err!("Failed to read manifest from current directory."),
+            })?;
     // Pick the package that matches this manifest path.
     let cwd = env::current_dir()?;
     let actual_manifest_path = match manifest_path {

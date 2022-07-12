@@ -5,7 +5,7 @@ use crate::{
     util::{extract_crate, pkg_path, signature},
     IndexPackage,
 };
-use failure::{bail, Error, ResultExt};
+use anyhow::{bail, Context, Error};
 use semver::{Comparator, Op, VersionReq};
 use std::fs::File;
 use std::{fs, io::Write, path::Path};
@@ -152,7 +152,7 @@ fn update_crate_index(
     // Add to git repo.
     let index_path = index_path.as_ref();
     let repo = git2::Repository::open(index_path)
-        .with_context(|_| format!("Could not open index at `{}`.", index_path.display()))?;
+        .with_context(|| format!("Could not open index at `{}`.", index_path.display()))?;
     let lock = Lock::new_exclusive(index_path)?;
     let all_pkg_vers = _list(index_path, &index_pkg.name, None)?;
     let pkg_vers_exists = all_pkg_vers
@@ -176,13 +176,13 @@ fn update_crate_index(
     let path = index_path.join(&repo_path);
     let dir_path = path.parent().unwrap();
     fs::create_dir_all(&dir_path)
-        .with_context(|_| format!("Failed to create directory `{}`.", dir_path.display()))?;
+        .with_context(|| format!("Failed to create directory `{}`.", dir_path.display()))?;
     let mut f = fs::OpenOptions::new()
         .create(true)
         .write(true)
         .truncate(true)
         .open(&path)
-        .with_context(|_| format!("Failed to create or open `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to create or open `{}`.", path.display()))?;
 
     for pkg_vers in all_pkg_vers {
         if pkg_vers.vers == index_pkg.vers {
@@ -192,11 +192,11 @@ fn update_crate_index(
         } else {
             write_index_pkg(&mut f, &pkg_vers)
         }
-        .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to write json entry at `{}`.", path.display()))?;
     }
     if !pkg_vers_exists {
         write_index_pkg(&mut f, &index_pkg)
-            .with_context(|_| format!("Failed to write json entry at `{}`.", path.display()))?;
+            .with_context(|| format!("Failed to write json entry at `{}`.", path.display()))?;
     }
 
     let msg = format!("Updating crate `{}#{}`", index_pkg.name, index_pkg.vers);
@@ -209,7 +209,7 @@ fn update_crate_index(
         fs::create_dir_all(upload)?;
         fs::copy(&crate_path, upload.join(&crate_path.file_name().unwrap()))?;
     }
-    git_add(&repo, &repo_path, &msg).with_context(|_| "Failed to add to git repo.")?;
+    git_add(&repo, &repo_path, &msg).with_context(|| "Failed to add to git repo.")?;
     drop(lock);
     Ok(index_pkg)
 }

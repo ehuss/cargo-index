@@ -4,7 +4,7 @@ use crate::{
     util::{cksum, crate_walker},
     IndexPackage,
 };
-use failure::{bail, format_err, Error, ResultExt};
+use anyhow::{bail, format_err, Context, Error};
 use std::{
     collections::{HashMap, HashSet},
     fs,
@@ -79,10 +79,10 @@ fn _validate(
             continue;
         }
         let contents = t!(fs::read_to_string(&path)
-            .with_context(|_| format!("Failed to read `{}`.", path.display())));
+            .with_context(|| format!("Failed to read `{}`.", path.display())));
         let mut seen = HashSet::new();
         for line in contents.lines() {
-            let pkg: IndexPackage = t!(serde_json::from_str(line).with_context(|_| format!(
+            let pkg: IndexPackage = t!(serde_json::from_str(line).with_context(|| format!(
                 "Could not deserialize `{}` line:\n{}",
                 path.display(),
                 line

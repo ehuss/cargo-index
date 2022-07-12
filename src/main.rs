@@ -1,12 +1,12 @@
+use anyhow::{bail, Error};
 use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
-use failure::{bail, Error};
 use std::path::Path;
 use std::process::exit;
 
 fn main() {
     if let Err(e) = run() {
         eprintln!("Error: {}", e);
-        for cause in e.iter_chain().skip(1) {
+        for cause in e.chain().skip(1) {
             eprintln!("Caused by: {}", cause);
         }
         exit(1);

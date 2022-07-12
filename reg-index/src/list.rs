@@ -3,9 +3,9 @@ use crate::{
     lock::Lock,
     util::{crate_walker, pkg_path},
 };
-use failure::{Error, ResultExt};
+use anyhow::{Context, Error};
 use semver::VersionReq;
-use std::{fs, iter::Iterator, path::Path};
+use std::{fs, path::Path};
 
 /// List entries in the index.
 ///
@@ -73,11 +73,11 @@ pub(crate) fn _list(
         return Ok(vec![]);
     }
     let contents = fs::read_to_string(&path)
-        .with_context(|_| format!("Failed to read `{}`.", path.display()))?;
+        .with_context(|| format!("Failed to read `{}`.", path.display()))?;
     contents
         .lines()
         .map(|line| {
-            Ok(serde_json::from_str(line).with_context(|_| {
+            Ok(serde_json::from_str(line).with_context(|| {
                 format!("Could not deserialize `{}` line:\n{}", path.display(), line)
             })?)
         })
