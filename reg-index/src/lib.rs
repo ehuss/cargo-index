@@ -45,7 +45,7 @@ requires that the filesystem supports locking.
 
 use failure::{Error, ResultExt};
 use semver::{Version, VersionReq};
-use serde_derive::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, fs, path::Path};
 use url::Url;
 

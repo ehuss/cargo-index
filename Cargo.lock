@@ -506,7 +506,6 @@ dependencies = [
  "same-file",
  "semver",
  "serde",
- "serde_derive",
  "serde_json",
  "sha2",
  "tar",
