@@ -6,7 +6,6 @@ use crate::{
     IndexPackage,
 };
 use failure::{bail, Error, ResultExt};
-use git2;
 use semver::{Comparator, Op, VersionReq};
 use std::fs::File;
 use std::{fs, io::Write, path::Path};
@@ -230,7 +229,7 @@ pub(crate) fn git_add(repo: &git2::Repository, path: &Path, msg: &str) -> Result
     let tree = repo.find_tree(id)?;
     let head = repo.head()?;
     let parent = repo.find_commit(head.target().unwrap())?;
-    let sig = signature(&repo)?;
+    let sig = signature(repo)?;
     repo.commit(Some("HEAD"), &sig, &sig, msg, &tree, &[&parent])?;
     Ok(())
 }

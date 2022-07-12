@@ -5,7 +5,6 @@ use crate::{
     IndexPackage,
 };
 use failure::{bail, Error, ResultExt};
-use git2;
 use semver::Version;
 use std::{fs, path::Path};
 

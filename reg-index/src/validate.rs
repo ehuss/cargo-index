@@ -24,7 +24,7 @@ pub fn validate(index: impl AsRef<Path>, crates: Option<&str>) -> Result<(), Err
     let lock = Lock::new_exclusive(index)?;
     load_config(index)?;
     let mut crate_map = HashMap::new();
-    let mut found_err = _validate(&mut crate_map, &index, crates)?;
+    let mut found_err = _validate(&mut crate_map, index, crates)?;
     found_err |= _validate_deps(&crate_map)?;
     drop(lock);
     if found_err {

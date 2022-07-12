@@ -1,5 +1,4 @@
 use failure::{bail, Error, ResultExt};
-use git2;
 use semver::Version;
 use sha2::Digest;
 use std::{

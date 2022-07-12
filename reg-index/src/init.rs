@@ -1,6 +1,5 @@
 use crate::util::signature;
 use failure::{bail, Error, ResultExt};
-use git2;
 use std::{fs, path::Path};
 
 /// Initialize a new registry index.
