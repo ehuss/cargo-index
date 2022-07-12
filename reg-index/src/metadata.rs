@@ -168,9 +168,11 @@ pub(crate) fn metadata_reg(
         vers: pkg.version.clone(),
         deps,
         features: pkg.features.clone().into_iter().collect(),
+        features2: None,
         cksum,
         yanked: false,
         links: pkg.links.clone(),
+        v: None,
         __nonexhaustive: (),
     };
     let info = MetaInfo {
