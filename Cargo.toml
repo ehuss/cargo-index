@@ -10,6 +10,7 @@ readme = "README.md"
 description = "Cargo subcommand to manage a registry index."
 homepage = "https://github.com/ehuss/cargo-index"
 repository = "https://github.com/ehuss/cargo-index"
+rust-version = "1.60"
 
 [dependencies]
 clap = "2.32.0"
