@@ -34,8 +34,6 @@ pub(crate) fn cargo_package(
 ) -> Result<PathBuf, Error> {
     let mut cmd = Command::new("cargo");
     cmd.arg("package")
-        .arg("--manifest-path")
-        .arg(manifest_path)
         .current_dir(manifest_path.parent().unwrap());
     if let Some(args) = package_args {
         cmd.args(args);
