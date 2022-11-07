@@ -16,7 +16,7 @@ anyhow = "1.0.58"
 cargo_metadata = "0.15.0"
 flate2 = { version = "1.0.6", features = ['zlib'] }
 fs2 = "0.4.3"
-git2 = "0.14.4"
+git2 = "0.15.0"
 hex = "0.4.0"
 same-file = "1.0.5"
 semver = { version = "1.0.0", features = ["serde"] }
