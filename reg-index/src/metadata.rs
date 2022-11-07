@@ -65,9 +65,24 @@ pub(crate) fn metadata_reg(
     crate_path: Option<&Path>,
     package_args: Option<&Vec<String>>,
 ) -> Result<MetaInfo, Error> {
+    let cwd = env::current_dir()?;
+    let actual_manifest_path = match manifest_path {
+        Some(path) => cwd.join(path),
+        None => cwd
+            .ancestors()
+            .map(|p| p.join("Cargo.toml"))
+            .find(|p| p.exists())
+            .ok_or_else(|| {
+                format_err!(
+                    "Could not find `Cargo.toml` in `{}` or any parent.",
+                    cwd.display()
+                )
+            })?,
+    };
+
     let mut cmd = cargo_metadata::MetadataCommand::new();
     if let Some(path) = manifest_path {
-        if let Some(parent) = path.parent() {
+        if let Some(parent) = actual_manifest_path.parent() {
             cmd.current_dir(parent);
         } else {
             cmd.manifest_path(path);
@@ -81,20 +96,6 @@ pub(crate) fn metadata_reg(
                 None => format_err!("Failed to read manifest from current directory."),
             })?;
     // Pick the package that matches this manifest path.
-    let cwd = env::current_dir()?;
-    let actual_manifest_path = match manifest_path {
-        Some(path) => path.to_path_buf(),
-        None => cwd
-            .ancestors()
-            .map(|p| p.join("Cargo.toml"))
-            .find(|p| p.exists())
-            .ok_or_else(|| {
-                format_err!(
-                    "Could not find `Cargo.toml` in `{}` or any parent.",
-                    cwd.display()
-                )
-            })?,
-    };
     let pkg = metadata
         .packages
         .iter()

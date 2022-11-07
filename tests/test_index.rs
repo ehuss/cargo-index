@@ -4,6 +4,7 @@ use self::support::{
 };
 use reg_index::IndexPackage;
 use std::fs;
+use std::path::Path;
 
 #[test]
 fn test_init() {
@@ -52,6 +53,17 @@ fn test_metadata() {
          \"deps\":[],\"features\":{{}},\"cksum\":\"{}\",\"yanked\":false,\"links\":null}}\n",
         reg_pkg.cksum
     );
+    assert_eq!(stdout, expected);
+
+    // Try with a relative path.
+    let foo_path = foo_pkg.path();
+    let parent = foo_path.parent().unwrap();
+    let relative = Path::new(foo_path.file_name().unwrap()).join("Cargo.toml");
+    let (stdout, _stderr) = cargo_index("metadata")
+        .index_url("https://example.com")
+        .cwd(parent)
+        .manifest(relative)
+        .run();
     assert_eq!(stdout, expected);
 }
 

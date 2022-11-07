@@ -106,7 +106,6 @@ impl TestBuilder {
         let path = path.as_ref();
         self.arg("--manifest-path");
         self.arg(path);
-        self.cwd(path.parent().unwrap());
         self
     }
 
