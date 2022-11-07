@@ -129,13 +129,7 @@ impl TestBuilder {
 
     pub fn run(&mut self) -> (String, String) {
         self.ran = true;
-        let mut cargo_dir = env::current_exe().unwrap();
-        cargo_dir.pop();
-        if cargo_dir.ends_with("deps") {
-            cargo_dir.pop();
-        }
-        let exe = cargo_dir.join(&format!("cargo-index{}", env::consts::EXE_SUFFIX));
-        let mut cmd = Command::new(exe);
+        let mut cmd = Command::new(env!("CARGO_BIN_EXE_cargo-index"));
         if let Some(cwd) = &self.cwd {
             cmd.current_dir(cwd);
         }
