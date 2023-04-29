@@ -88,6 +88,7 @@ pub(crate) fn metadata_reg(
             cmd.manifest_path(path);
         }
     }
+    cmd.no_deps();
     let metadata =
         cmd.exec()
             .map_err(|e| format_err!("{}", e))
