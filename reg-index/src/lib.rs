@@ -59,6 +59,7 @@ mod validate;
 mod yank;
 
 pub use add::{add, add_from_crate, force_add};
+pub use cargo_metadata::DependencyKind;
 pub use init::init;
 pub use list::{list, list_all};
 pub use metadata::{metadata, metadata_from_crate};
@@ -117,7 +118,7 @@ pub struct IndexDependency {
     /// The dependency kind.
     // Required, but crates.io has some broken missing entries.
     #[serde(default, deserialize_with = "parse_dependency_kind")]
-    pub kind: cargo_metadata::DependencyKind,
+    pub kind: DependencyKind,
     /// The URL of the index of the registry where this dependency is from.
     ///
     /// If not specified or null, it is assumed the dependency is in the
@@ -129,7 +130,7 @@ pub struct IndexDependency {
     pub package: Option<String>,
 }
 
-fn parse_dependency_kind<'de, D>(d: D) -> Result<cargo_metadata::DependencyKind, D::Error>
+fn parse_dependency_kind<'de, D>(d: D) -> Result<DependencyKind, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
