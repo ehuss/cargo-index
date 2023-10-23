@@ -5,7 +5,7 @@ resolver = "2"
 
 [package]
 name = "cargo-index"
-version = "0.2.6"
+version = "0.2.7"
 authors = ["Eric Huss"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
@@ -20,7 +20,7 @@ rust-version = "1.70"
 [dependencies]
 anyhow = "1.0.58"
 clap = { version = "4.4.6", features = ["cargo"] }
-reg-index = { version = "0.5.0", path = "reg-index" }
+reg-index = { version = "0.6.0", path = "reg-index" }
 serde_json = "1.0.33"
 
 [dev-dependencies]
