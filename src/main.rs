@@ -1,5 +1,5 @@
 use anyhow::{bail, Error};
-use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{crate_version, Arg, ArgAction, ArgMatches, Command};
 use std::path::Path;
 use std::process::exit;
 
@@ -39,11 +39,11 @@ as-is to `cargo package` when generating the `.crate` file.
 ";
 
 trait AppExt: Sized {
-    fn _arg(self, arg: Arg<'static, 'static>) -> Self;
+    fn _arg(self, arg: Arg) -> Self;
 
     fn arg_manifest(self) -> Self {
         self._arg(
-            Arg::with_name("manifest-path")
+            Arg::new("manifest-path")
                 .long("manifest-path")
                 .value_name("PATH")
                 .help("Path to Cargo.toml file."),
@@ -52,16 +52,17 @@ trait AppExt: Sized {
 
     fn arg_crate(self) -> Self {
         self._arg(
-            Arg::with_name("crate")
+            Arg::new("crate")
                 .long("crate")
                 .value_name("PATH")
+                .conflicts_with("package-args")
                 .help("Path to .crate file."),
         )
     }
 
     fn arg_index(self) -> Self {
         self._arg(
-            Arg::with_name("index")
+            Arg::new("index")
                 .long("index")
                 .value_name("INDEX")
                 .required(true)
@@ -71,7 +72,7 @@ trait AppExt: Sized {
 
     fn arg_index_url(self) -> Self {
         self._arg(
-            Arg::with_name("index-url")
+            Arg::new("index-url")
                 .long("index-url")
                 .value_name("INDEX-URL")
                 .required(true)
@@ -81,9 +82,9 @@ trait AppExt: Sized {
 
     fn arg_package(self, help: &'static str, required: bool) -> Self {
         self._arg(
-            Arg::with_name("package")
+            Arg::new("package")
                 .long("package")
-                .short("p")
+                .short('p')
                 .value_name("NAME")
                 .required(required)
                 .help(help),
@@ -92,7 +93,7 @@ trait AppExt: Sized {
 
     fn arg_version(self, help: &'static str, required: bool) -> Self {
         self._arg(
-            Arg::with_name("version")
+            Arg::new("version")
                 .long("version")
                 .alias("vers")
                 .value_name("VERSION")
@@ -103,11 +104,10 @@ trait AppExt: Sized {
 
     fn arg_force(self) -> Self {
         self._arg(
-            Arg::with_name("force")
+            Arg::new("force")
                 .long("force")
                 .alias("f")
-                .takes_value(false)
-                .required(false)
+                .action(ArgAction::SetTrue)
                 .help(
                     "Update the entry for the current package version, even if it already exists.",
                 ),
@@ -115,41 +115,40 @@ trait AppExt: Sized {
     }
 
     fn arg_package_args(self) -> Self {
-        self._arg(Arg::with_name("package-args").multiple(true))
+        self._arg(Arg::new("package-args").action(ArgAction::Append))
     }
 }
 
-impl AppExt for App<'static, 'static> {
-    fn _arg(self, arg: Arg<'static, 'static>) -> Self {
+impl AppExt for Command {
+    fn _arg(self, arg: Arg) -> Self {
         self.arg(arg)
     }
 }
 
 fn run() -> Result<(), Error> {
-    let matches = App::new("cargo-index")
+    let matches = Command::new("cargo-index")
         .version(crate_version!())
         .bin_name("cargo")
-        .setting(AppSettings::SubcommandRequiredElseHelp)
-        .global_settings(&[
-            AppSettings::GlobalVersion,  // subcommands inherit version
-            AppSettings::ColoredHelp,
-        ])
+        .subcommand_required(true)
+        .arg_required_else_help(true)
+        .propagate_version(true)
         .subcommand(
-            SubCommand::with_name("index")
+            Command::new("index")
                 .about("Manage a registry index.")
-                .setting(AppSettings::SubcommandRequiredElseHelp)
+                .subcommand_required(true)
+                .arg_required_else_help(true)
                 .subcommand(
-                    SubCommand::with_name("add")
+                    Command::new("add")
                         .about("Add a package to an index.")
                         .after_help(ADD_HELP)
-                        .setting(AppSettings::TrailingVarArg)
+                        .trailing_var_arg(true)
                         .arg_manifest()
                         .arg_crate()
                         .arg_index()
                         .arg_index_url()
                         .arg_force()
                         .arg(
-                            Arg::with_name("upload")
+                            Arg::new("upload")
                             .long("upload")
                             .value_name("DIR")
                             .help("If set, will copy the crate into the given directory. \
@@ -158,11 +157,11 @@ fn run() -> Result<(), Error> {
                         .arg_package_args()
                 )
                 .subcommand(
-                    SubCommand::with_name("init")
+                    Command::new("init")
                         .about("Create a new index.")
                         .arg_index()
                         .arg(
-                            Arg::with_name("dl")
+                            Arg::new("dl")
                             .long("dl")
                             .value_name("DL")
                             .required(true)
@@ -171,48 +170,51 @@ fn run() -> Result<(), Error> {
                                 If the {crate}/{version} markers are not present, Cargo \
                                 automatically adds `/{crate}/{version}/download` to the end."))
                         .arg(
-                            Arg::with_name("api")
+                            Arg::new("api")
                             .long("api")
                             .value_name("API")
                             .help("URL of API host such as https://example.com"))
                 )
                 .subcommand(
-                    SubCommand::with_name("metadata")
+                    Command::new("metadata")
                         .about("Generate JSON metadata for a package.")
                         .after_help(METADATA_HELP)
-                        .setting(AppSettings::TrailingVarArg)
+                        .trailing_var_arg(true)
                         .arg_manifest()
                         .arg_crate()
                         .arg_index_url()
                         .arg_package_args()
                 )
                 .subcommand(
-                    SubCommand::with_name("yank")
+                    Command::new("yank")
                         .about("Yank a crate from an index.")
                         .arg_index()
                         .arg_package("Name of the package to yank.", true)
                         .arg_version("Version to yank.", true)
+                        .disable_version_flag(true)
                 )
                 .subcommand(
-                    SubCommand::with_name("unyank")
+                    Command::new("unyank")
                         .about("Un-yank a crate from an index.")
                         .arg_index()
                         .arg_package("Name of the package to unyank.", true)
                         .arg_version("Version to unyank.", true)
+                        .disable_version_flag(true)
                 )
                 .subcommand(
-                    SubCommand::with_name("list")
+                    Command::new("list")
                         .about("List entries in the index.")
                         .arg_index()
                         .arg_package("Name of the package to search for.", false)
                         .arg_version("Version requirement to search for.", false)
+                        .disable_version_flag(true)
                 )
                 .subcommand(
-                    SubCommand::with_name("validate")
+                    Command::new("validate")
                         .about("Validate the format of an index.")
                         .arg_index()
                         .arg(
-                            Arg::with_name("crates")
+                            Arg::new("crates")
                                 .long("crates")
                                 .value_name("DIR")
                                 .help("Optional path to the location of all .crate files. \
@@ -227,13 +229,13 @@ fn run() -> Result<(), Error> {
         .expect("Expected `index` subcommand.");
 
     match submatches.subcommand() {
-        ("init", Some(args)) => init(args),
-        ("add", Some(args)) => add(args),
-        ("metadata", Some(args)) => metadata(args),
-        ("yank", Some(args)) => yank(args),
-        ("unyank", Some(args)) => unyank(args),
-        ("list", Some(args)) => list(args),
-        ("validate", Some(args)) => validate(args),
+        Some(("init", args)) => init(args),
+        Some(("add", args)) => add(args),
+        Some(("metadata", args)) => metadata(args),
+        Some(("yank", args)) => yank(args),
+        Some(("unyank", args)) => unyank(args),
+        Some(("list", args)) => list(args),
+        Some(("validate", args)) => validate(args),
         _ => {
             // Enforced by SubcommandRequiredElseHelp.
             unreachable!()
@@ -243,31 +245,30 @@ fn run() -> Result<(), Error> {
     Ok(())
 }
 
-fn package_args(args: &ArgMatches<'_>) -> Result<Option<Vec<String>>, Error> {
-    let package_args: Option<Vec<String>> = args
-        .values_of("package-args")
-        .map(|values| values.map(|s| s.to_string()).collect());
-    if args.is_present("crate") && args.is_present("package-args") {
-        bail!("`cargo package` arguments shouldn't be specified with `--crate`.")
-    }
-    Ok(package_args)
+fn package_args(args: &ArgMatches) -> Option<Vec<String>> {
+    args.get_many::<String>("package-args")
+        .map(|values| values.cloned().collect())
 }
 
-fn init(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let path = args.value_of("index").unwrap();
-    reg_index::init(path, args.value_of("dl").unwrap(), args.value_of("api"))?;
+fn init(args: &ArgMatches) -> Result<(), Error> {
+    let path = args.get_one::<String>("index").unwrap();
+    reg_index::init(
+        path,
+        args.get_one::<String>("dl").unwrap(),
+        args.get_one::<String>("api").map(String::as_str),
+    )?;
     println!("Index created at `{}`.", path);
     Ok(())
 }
 
-fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let index_path = args.value_of("index").unwrap();
-    let index_url = args.value_of("index-url").unwrap();
-    let krate = args.value_of("crate").map(Path::new);
-    let upload = args.value_of("upload");
-    let manifest_path = args.value_of("manifest-path").map(Path::new);
-    let force = args.is_present("force");
-    let package_args = package_args(args)?;
+fn add(args: &ArgMatches) -> Result<(), Error> {
+    let index_path = args.get_one::<String>("index").unwrap();
+    let index_url = args.get_one::<String>("index-url").unwrap();
+    let krate = args.get_one::<String>("crate").map(Path::new);
+    let upload = args.get_one::<String>("upload").map(String::as_str);
+    let manifest_path = args.get_one::<String>("manifest-path").map(Path::new);
+    let force = args.get_flag("force");
+    let package_args = package_args(args);
     let reg_pkg = match (manifest_path, krate) {
         (Some(_), None) | (None, None) => {
             if force {
@@ -295,11 +296,11 @@ fn add(args: &ArgMatches<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-fn metadata(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let index_url = args.value_of("index-url").unwrap();
-    let manifest_path = args.value_of("manifest-path").map(Path::new);
-    let krate = args.value_of("crate").map(Path::new);
-    let package_args = package_args(args)?;
+fn metadata(args: &ArgMatches) -> Result<(), Error> {
+    let index_url = args.get_one::<String>("index-url").unwrap();
+    let manifest_path = args.get_one::<String>("manifest-path").map(Path::new);
+    let krate = args.get_one::<String>("crate").map(Path::new);
+    let package_args = package_args(args);
     let reg_pkg = match (manifest_path, krate) {
         (Some(_), None) | (None, None) => {
             reg_index::metadata(index_url, manifest_path, package_args.as_ref())
@@ -311,32 +312,37 @@ fn metadata(args: &ArgMatches<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-fn yank(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let pkg = args.value_of("package").unwrap();
-    let version = args.value_of("version").unwrap();
-    reg_index::yank(args.value_of("index").unwrap(), pkg, version)?;
+fn yank(args: &ArgMatches) -> Result<(), Error> {
+    let pkg = args.get_one::<String>("package").unwrap();
+    let version = args.get_one::<String>("version").unwrap();
+    reg_index::yank(args.get_one::<String>("index").unwrap(), pkg, version)?;
     println!("{}:{} yanked!", pkg, version);
     Ok(())
 }
 
-fn unyank(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let pkg = args.value_of("package").unwrap();
-    let version = args.value_of("version").unwrap();
-    reg_index::unyank(args.value_of("index").unwrap(), pkg, version)?;
+fn unyank(args: &ArgMatches) -> Result<(), Error> {
+    let pkg = args.get_one::<String>("package").unwrap();
+    let version = args.get_one::<String>("version").unwrap();
+    reg_index::unyank(args.get_one::<String>("index").unwrap(), pkg, version)?;
     println!("{}:{} unyanked!", pkg, version);
     Ok(())
 }
 
-fn list(args: &ArgMatches<'_>) -> Result<(), Error> {
-    let pkg = args.value_of("package");
-    let version = args.value_of("version");
+fn list(args: &ArgMatches) -> Result<(), Error> {
+    let pkg = args.get_one::<String>("package").map(String::as_str);
+    let version = args.get_one::<String>("version").map(String::as_str);
     let mut count = 0;
-    reg_index::list_all(args.value_of("index").unwrap(), pkg, version, |entries| {
-        for entry in entries {
-            count += 1;
-            println!("{}", serde_json::to_string(&entry).unwrap());
-        }
-    })?;
+    reg_index::list_all(
+        args.get_one::<String>("index").unwrap(),
+        pkg,
+        version,
+        |entries| {
+            for entry in entries {
+                count += 1;
+                println!("{}", serde_json::to_string(&entry).unwrap());
+            }
+        },
+    )?;
     if count == 0 {
         match (pkg, version) {
             (Some(pkg), Some(version)) => bail!(
@@ -355,6 +361,9 @@ fn list(args: &ArgMatches<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-fn validate(args: &ArgMatches<'_>) -> Result<(), Error> {
-    reg_index::validate(args.value_of("index").unwrap(), args.value_of("crates"))
+fn validate(args: &ArgMatches) -> Result<(), Error> {
+    reg_index::validate(
+        args.get_one::<String>("index").unwrap(),
+        args.get_one::<String>("crates").map(String::as_str),
+    )
 }
