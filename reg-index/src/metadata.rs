@@ -134,7 +134,6 @@ pub(crate) fn metadata_reg(
                 Some(new_name) => (new_name.clone(), Some(dep.name.clone())),
                 None => (dep.name.clone(), None),
             };
-            println!("dep ={:?} index_url={:?}", dep.registry, index_url);
             let registry = dep
                 .registry
                 .as_ref()
