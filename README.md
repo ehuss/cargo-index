@@ -14,7 +14,7 @@ functionality.
 
 `cargo install cargo-index`
 
-This requires at a minimum Cargo 1.60.
+This requires at a minimum Cargo 1.66.
 
 ## Usage
 
